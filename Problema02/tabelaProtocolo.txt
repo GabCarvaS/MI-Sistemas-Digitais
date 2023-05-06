@@ -1,0 +1,72 @@
+........Tabela 01 - Comandos........
+
+00000000 -> Selecionar sensor 0
+00000001 -> Selecionar sensor 01
+00000011 -> Selecionar sensor 02
+00000010 -> Selecionar sensor 03
+00001100 -> Selecionar sensor 12
+00011110 -> Selecionar sensor 30
+
+
+........Tabela 02 - Respostas........
+
+00000000 -> Sensor não encontrado
+01000000 -> Sensor selecionado
+11000000 -> Erro na leitura do sensor
+10000000 ->
+xx------ -> Valores lidos
+
+
+
+........Envio de instruções pela OrangePI via UART para a NodeMCU........
+
+1ª Palavra (Start Bit + Identificação da NodeMCU):
+ - Start Bit: 1 bit (valor fixo em 1 para indicar o início da transmissão)				  
+ - Identificação da NodeMCU: 5 bits (valores de 0 a 31, indicando qual NodeMCU irá receber a instrução)		
+
+2ª Palavra (Instrução):	
+ - Instrução: 8 bits (valores de 0 a 255, representando a instrução a ser executada)
+ - Comando (8 bits)	
+		 
+3ª Palavra (Stop Bit + Identificação da NodeMCU):
+ - Stop Bit: 1 bit (valor fixo em 0 para indicar o fim da transmissão)
+ - Identificação da NodeMCU: 5 bits (valores de 0 a 31, indicando qual NodeMCU recebeu a instrução)
+
+################################################################################################
+
+........Resposta da NodeMCU para a OrangePI........
+
+1ª Palavra (Start Bit + Identificação da NodeMCU):
+ - Start Bit: 1 bit (valor fixo em 1 para indicar o início da transmissão)
+ - Identificação da NodeMCU: 5 bits (valores de 0 a 31, indicando qual NodeMCU está enviando a resposta)
+
+2ª Palavra (Resposta):
+ - Resposta: 8 bits (valores de 0 a 255, representando a resposta à instrução executada)
+
+3ª Palavra (Stop Bit + Identificação da NodeMCU):
+ - Stop Bit: 1 bit (valor fixo em 0 para indicar o fim da transmissão)
+ - Identificação da NodeMCU: 5 bits (valores de 0 a 31, indicando qual NodeMCU está enviando a resposta)
+
+################################################################################################
+
+........Exemplo de Funcionamento........ (REFORMULAR)
+
+	-> Enviando a instrução pela OrangePI para a NodeMCU
+1ª Selecionar a NodeMCU 12 para receber a instrução. O valor binário correspondente para a identificação da NodeMCU será: 0001100
+A primeira palavra de transmissão será: 10001100 (startbit = 1; NodeMCU = 0001100 (12))
+
+2ª Enviar a instrução de leitura de um sensor. Sensor de temperatura = 170 em binário (10101010).
+A segunda palavra de transmissão será: 10101010 (170 em binário)
+
+3ª Selecionar a NodeMCU 12 para informar o fim da instrução.
+A terceira palavra de transmissão será: 00001100 (stopbit = 0; NodeMCU = 0001100 (12))
+
+	-> Enviando a resposta da NodeMCU para a OrangePI
+1ª Informar o valor binário para a identificação da NodeMCU: 0001100
+A primeira palavra de resposta será: 10001100 (startbit = 1; NodeMCU = 0001100 (12))
+
+2ª Enviar a resposta do sensor de temperatura
+A segunda palavra de resposta será: 00011001(25 graus Celsius)
+
+3ª Informar o fim 
+A terceira palavra de transmissão será: 00001100 (stopbit = 0; NodeMCU = 0001100 (12))
