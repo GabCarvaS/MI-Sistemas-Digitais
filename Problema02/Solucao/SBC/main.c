@@ -7,8 +7,7 @@
 #include <string.h>
 
 
-//........Nodes - Unidades........
-
+/* Definindo os valores de Nodes */
 #define todasNodes 0b100010 //34
 #define Node01 0b00100011 // 35
 #define Node02 0b00100100
@@ -43,7 +42,7 @@
 #define Node31 0b01000001
 #define Node32 0b01000010 // 66
 
-//........Tabela 02 - Comandos........
+/* Definindo os valores de Comandos */
 #define situacaoSensor  0b00000001 // 01
 #define entradaAnalogica  0b00010001 //17
 #define entradaDigital0  0b00010010 //18
@@ -62,8 +61,7 @@
 #define entradaDigital13  0b00011111 //31
 #define acenderLed  0b00100001 // 33
 
-//........Tabela 03 - Respostas........
-
+/* Definindo os valores de Respostas */
 #define	problemaNode 0b00000001 // 1
 #define okNode 0b00000010 // 2
 #define estadoSensorDigital 0b00010010 // 18
@@ -88,17 +86,19 @@
 /* Funções */
 void showDisplaySup(char dados[], int lcd);
 void showDisplayInf(char dados[], int lcd);
-void send(char dados[], int fd);
-void read(int fd);
+void send(char dados, int fd);
+unsigned char read(int fd);
 
 int main()
 {
-    wiringPiSetup(); 
-
     /* Configura os botões */
     pinMode(B1,INPUT); // ok
     pinMode(B2,INPUT); // anterior
     pinMode(B3,INPUT); // proximo
+
+    /* Configura os leds */
+    pinMode(PA8,OUTPUT);
+    pinMode(PA9,OUTPUT);
 
     /* Configura pinos do LCD */
     pinMode(LCD_D4, OUTPUT); 
@@ -106,70 +106,131 @@ int main()
     pinMode(LCD_D6, OUTPUT); 
     pinMode(LCD_D7, OUTPUT); 
     pinMode(LCD_E, OUTPUT); 
-    pinMode(LCD_RS, OUTPUT); 
-    pinMode(PA9, OUTPUT); 
+    pinMode(LCD_RS, OUTPUT);  
 
     /* Inicializa Display*/
     int lcd;
     lcd = lcdInit (2, 16, 4, LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7, 0, 0, 0, 0);
 
     int fd;
-    int cont = 0;
-    int unidade = 0;
-    char unidadeEscolhida[];
-    char option[];
-    char options[3][20];
+    int comandoCont = 0, nodeCont=0;
+    char unidade[16];
+    char comandos[3][20];
+    char menu[3][20];
 
-    // copia as strings para a matriz
-    strcpy(options[0], "Ler sensor digital");
-    strcpy(options[1], "Ler sensor analogico");
-    strcpy(options[2], "Acender LED");
+    /* Desliga os leds */
+    digitalWrite(PA8, 0);
+    digitalWrite(PA9, 0);
 
-    if(wiringPiSetup() < 0)return 1;
-    if((fd = serialOpen("/dev/ttyS3",9600)) < 0)return 1;
+    // opções do menu
+    strcpy(menu[0], "Selecionar Node");
+    strcpy(menu[1], "Op 02");
+    strcpy(menu[2], "OP 03");
+
+    // comandos
+    strcpy(comandos[0], "Ler sensor digital");
+    strcpy(comandos[1], "Ler sensor analogico");
+    strcpy(comandos[2], "Acender LED");
+
+    if(wiringPiSetup() < 0){
+        printf("Unable to start wiringPi");
+        return 1 ;
+    }
+    if((fd = serialOpen("/dev/ttyS3",9600)) < 0){
+        printf("Unable to open serial device");
+        return 1 ;
+    }
 
     printf("Iniciando ...\n");
+    lcdClear(lcd);
+    showDisplaySup("PBL 02", lcd);
+    showDisplayInf("Sist. Digitais",lcd);
+    delay(2000);
+    lcdClear(lcd);
 
-    lcdClear(lcd);
-    showDisplaySup("Menu", lcd);
-    showDisplayInf("Escolha uma opção: ", lcd); //Alterar... primeiro escolhe a node, depois escolhe oq fazer na node
-    delay(3000);
-    lcdClear(lcd);
     while(1){
-        //sprintf(option, "%s", options[cont]);
-        //strcat(mensagem, nome);
-        showDisplaySup("Escolha uma opção: ", lcd);
-        showDisplayInf(options[cont], lcd);
+        sprintf(unidade,"%d", nodeCont);
+        showDisplaySup("Escolha uma Node: ", lcd);
+        showDisplayInf(unidade, lcd);
         delay(500);
         if(digitalRead(B1) == LOW){ // ok
-                switch(cont){
+                switch(nodeCont){
                     case 0:
+                        lcdClear(lcd);                
+                        while(1){    
+                            showDisplaySup("Comando: ",lcd); 
+                            showDisplayInf(comandos[comandoCont],lcd); 
+                            delay(500);                     
+                            if(digitalRead(B2) == LOW){ // prox
+                                comandoCont++;
+                                if(comandoCont > 2){
+                                    comandoCont = 2;
+                                }
+                                lcdClear(lcd);
+                            }
+                            else if(digitalRead(B3) == LOW){ // anterior
+                                comandoCont--;
+                                if(cont < 0){
+                                    comandoCont = 0;
+                                }
+                                lcdClear(lcd);
+                            }
+                            else if(digitalRead(B1) == LOW){ // ok
+                                switch(comandoCont){
+                                    case 0:
+                                        lcdClear(lcd);
+                                        showDisplaySup("primeira opc",lcd);
+                                        delay(2000);
+                                        lcdClear(lcd);
+                                        break;
+                                    case 1:
+                                        lcdClear(lcd);
+                                        showDisplaySup("segunda opc",lcd);
+                                        delay(2000);
+                                        lcdClear(lcd);
+                                        break;
+                                    case 2:
+                                        lcdClear(lcd);
+                                        showDisplaySup(comandos[cont],lcd);
+                                        send(acenderLed,fd);
+                                        delay(1000);
+                                        lcdClear(lcd);
+                                        break;
+                                }
+                            }
+                        }
+                        delay(2000);
                         lcdClear(lcd);
-                        delay(1000);
-                        showDisplaySup(options[cont]);
-                        sprintf(unidadeEscolhida, "%d", unidade);
-                        showDisplayInf();
+                        break;
                     case 1:
-
+                        lcdClear(lcd);
+                        sprintf(unidade, "%d", nodeCont);
+                        showDisplaySup(unidade,lcd);
+                        delay(2000);
+                        lcdClear(lcd);
+                        break;
                     case 2:
-
+                        lcdClear(lcd);
+                        sprintf(unidade, "%d", nodeCont);
+                        showDisplaySup(unidade,lcd);
+                        delay(2000);
+                        lcdClear(lcd);
+                        break;
                 }
         }  
         else if(digitalRead(B2)== LOW){ // anterior
-            if(cont <= 0){
-                cont = 0;
+            nodeCont--;
+            if(nodeCont < 0){
+                nodeCont = 0;
             }
-            else{
-                cont--;
-            }
+            lcdClear(lcd);
         }
         else if(digitalRead(B3)== LOW){ // proximo
-            if(cont >= 2){
-                cont = 0;
+            nodeCont++;
+            if(nodeCont > 31){
+                nodeCont = 0;
             }
-            else{
-                cont++;
-            }
+            lcdClear(lcd);
         }
     }
     return 0;
@@ -178,38 +239,37 @@ int main()
 void showDisplaySup(char dados[], int lcd){
     lcdPosition(lcd, 0, 0); // Seleciona a linha superior
     lcdPrintf(lcd, "%s", dados); // Mostra a msg
+    return;
 }
 
 void showDisplayInf(char dados[], int lcd){
     lcdPosition(lcd, 0, 1);//Seleciona a linha inferior
     lcdPrintf(lcd, "%s", dados);// Mostra a msg
+    return;
 }
 
 /* Função para enviar dados para a UART */
-void send(char dados[], int fd){
-    char mensagem[] = "Enviando dados para a UART: ";
+void send(char dados, int fd){
+    char mensagem[30];
     // Envio do TX - Uart
     serialPutchar(fd, dados);
    
-    serialPrintf(fd,dados);// Testar
+    //serialPrintf(fd,dados);// Testar
     
-    //sprintf(mensagem,"Enviando dados para a UART: ",dados);
-    strcat(mensagem, dados);
+    sprintf(mensagem,"Enviando dados para a UART: %c",dados);
+
     printf("%s", mensagem);
+    return;
 }
 
-/* Função para ler dados da UART */
+/* Função para ler dados da UART + timeout 20ms */
 unsigned char read(int fd){
-    bool resposta = true;
-    char msg[] = "";
-    while(resposta)
+    delay(20);
+    if(serialDataAvail (fd) > 0)
     {
-        while(serialDataAvail (fd))
-        {
-            msg = serialGetchar (fd);
-            fflush (stdout);
-            resposta = false;
-        }       
-    }
-    return msg;
+        msg = serialGetchar (fd);
+        fflush (stdout);
+        return msg;
+    }       
+    return '';
 }
