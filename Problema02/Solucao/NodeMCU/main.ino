@@ -10,32 +10,13 @@
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
-const char* host = "ESP-10.0.0.109";
+const char* host = "ESP-10.0.0.107";
 
 int led_pin = LED_BUILTIN;
 #define N_DIMMERS 3
 int dimmer_pin[] = {14, 5, 15};
-
-//........Tabela 01 - Comandos........
-#define situacaoSensor  0b00000001 // 01
-#define entradaAnalogica  0b00010001 //17 -> Potenciometro
-#define entradaDigital0  0b00010010 //18
-#define entradaDigital1  0b00010011
-#define entradaDigital2  0b00010100
-#define entradaDigital3  0b00010101
-#define entradaDigital4  0b00010110
-#define entradaDigital5  0b00010111
-#define entradaDigital6  0b00011000
-#define entradaDigital7  0b00011001
-#define entradaDigital8  0b00011010
-#define entradaDigital9  0b00011011
-#define entradaDigital10  0b00011100
-#define entradaDigital11  0b00011101
-#define entradaDigital12  0b00011110
-#define entradaDigital13  0b00011111 //31
-#define acenderLed  0b00100001 // 33
-
-
+#define acende_led  0b00100001
+#define okNode 0b00000010
 
 void setup() {
   
@@ -91,23 +72,17 @@ void setup() {
   /* setup the OTA server */
   ArduinoOTA.begin();
   //Serial.println("Tudo pronto.");
+  digitalWrite(led_pin, HIGH);
 }
 
 void loop() { 
   ArduinoOTA.handle();
-  digitalWrite(led_pin, HIGH);
-  
-    /* Via loopback */
-  char comando = 0b00100001;
-  Serial.write(comando);
-  delay(5000);
   if(Serial.available() > 0) { // Verifica se tem algo sendo recebido
       char c = Serial.read();  //Lê o pino RX
       switch(c){
         case acende_led:
-         //Serial.write("Chegou");
+          Serial.write(okNode);
           digitalWrite(led_pin, LOW);
-          delay(2000);
           break;
       } 
   }
