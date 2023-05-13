@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /* Definindo os valores de Nodes */
 #define todasNodes 0b100010 //34
 #define Node01 0b00100011 // 35
@@ -91,7 +90,11 @@ int readUart(int fd);
 
 int main()
 {
-    wiringPiSetup();
+    int ini = wiringPiSetup();
+    if(ini < 0){
+        printf("Unable to start wiringPi");
+        return 1 ;
+    }
 
     /* Configura os botões */
     pinMode(B1,INPUT); // ok
@@ -115,10 +118,16 @@ int main()
     lcd = lcdInit (2, 16, 4, LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7, 0, 0, 0, 0);
 
     int fd;
-    int comandoCont = 0, nodeCont=0,resp;
+    int comandoCont = 0, nodeCont=0, resp = 0;
     char unidade[16];
+    char txt[16];
     char comandos[3][20];
-    //char menu[3][20];
+    
+    fd = serialOpen("/dev/ttyS3",9600);
+    if(fd < 0){
+        printf("Unable to open serial device");
+        return 1 ;
+    }
 
     /* Desliga os leds */
     digitalWrite(PA8, 0);
@@ -139,8 +148,10 @@ int main()
         return 1 ;
     }
     */
+    /*
     if(wiringPiSetup() < 0)return 1;
     if((fd = serialOpen("/dev/ttyS3",9600)) < 0)return 1;
+    */
 
     printf("Iniciando ...\n");
     lcdClear(lcd);
@@ -152,14 +163,25 @@ int main()
     while(1){
         sprintf(unidade,"%d", nodeCont);
         showDisplaySup("Escolha uma Node: ", lcd);
-        showDisplayInf(unidade, lcd);
+        if(nodeCont == 0){
+            showDisplayInf("Todas", lcd);
+        }
+        else{
+            showDisplayInf(unidade, lcd);
+        }       
         delay(500);
         if(digitalRead(B1) == LOW){ // ok
                 switch(nodeCont){
                     case 0:
+                        lcdClear(lcd);
+                        // todasNodes
+                        showDisplaySup("Todas as nodes",lcd);
+                        delay(2000);
+                        lcdClear(lcd);
+                        break;
+                    case 1:
                         lcdClear(lcd);                
                         while(1){    
-                            //lcdHome(lcd);
                             showDisplaySup("Comando:",lcd); 
                             showDisplayInf(comandos[comandoCont],lcd); 
                             delay(500);                     
@@ -181,36 +203,65 @@ int main()
                                 switch(comandoCont){
                                     case 0:
                                         lcdClear(lcd);
-                                        showDisplaySup("primeira opc",lcd);
-                                        delay(2000);
+                                        showDisplaySup("Sensor digital",lcd);
+                                        /*Teste*/
+                                        sendUART(entradaDigital0,fd); // Manda o comando 
+                                        if((resp = readUart(fd)) > -1){ // Lê resposta
+                                            printf("case: %d\n",resp);
+                                            sprintf(txt,"%d",resp);
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf(txt,lcd);
+                                        }
+                                        else{
+                                            printf("TimeOut");
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf("Erro",lcd);
+                                        }  
+                                        delay(1000);                                
                                         lcdClear(lcd);
                                         break;
                                     case 1:
                                         lcdClear(lcd);
-                                        showDisplaySup("segunda opc",lcd);
-                                        delay(2000);
+                                        lcdHome(lcd);
+                                        //showDisplaySup("Sensor analogico",lcd);
+                                        sendUART(entradaAnalogica,fd); // Manda o comando 
+                                        if((resp = readUart(fd)) > -1){ // Lê resposta
+                                            printf("case: %d\n",resp);
+                                            sprintf(txt,"%d",resp);
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf(txt,lcd);
+                                        }
+                                        else{
+                                            printf("TimeOut");
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf("Erro",lcd);
+                                        }  
+                                        delay(2000);                                
                                         lcdClear(lcd);
                                         break;
                                     case 2:                 
                                         lcdClear(lcd);
                                         lcdHome(lcd);
-                                        sendUART(acenderLed,fd); // Manda o comando
-                                        delay(20); // Tempo para espera
-                                        resp = readUart(fd); // Lê resposta
-                                        printf("case: %d\n",resp);
+                                        sendUART(acenderLed,fd); // Manda o comando 
+                                        if((resp = readUart(fd)) > -1){ // Lê resposta
+                                            printf("case: %d\n",resp);
+                                            sprintf(txt,"%d",resp);
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf(txt,lcd);
+                                        }
+                                        else{
+                                            printf("TimeOut excedido");
+                                            showDisplaySup("Leitura",lcd);
+                                            showDisplayInf("Erro",lcd);
+                                        }  
+                                        delay(2000);                                
                                         lcdClear(lcd);
                                         break;
                                 }
+                                break;
                             }
                         }
                         delay(1000);
-                        lcdClear(lcd);
-                        break;
-                    case 1:
-                        lcdClear(lcd);
-                        sprintf(unidade, "%d", nodeCont);
-                        showDisplaySup(unidade,lcd);
-                        delay(2000);
                         lcdClear(lcd);
                         break;
                     case 2:
@@ -222,14 +273,14 @@ int main()
                         break;
                 }
         }  
-        else if(digitalRead(B2)== LOW){ // anterior -> alterar para ser o botão de voltar???
-            /*nodeCont--;
+        else if(digitalRead(B2) == LOW){ // anterior -> alterar para ser o botão de voltar???
+            nodeCont--;
             if(nodeCont < 0){
                 nodeCont = 0;
             }
-            lcdClear(lcd);*/
+            lcdClear(lcd);
         }
-        else if(digitalRead(B3)== LOW){ // proximo
+        else if(digitalRead(B3) == LOW){ // proximo
             nodeCont++;
             if(nodeCont > 31){
                 nodeCont = 0;
@@ -254,23 +305,29 @@ void showDisplayInf(char dados[], int lcd){
 
 /* Função para enviar dados para a UART */
 void sendUART(char dados, int fd){
+    char aux[20];
+
     // Envio do TX - Uart
     serialPutchar(fd, dados);
    
-    //sprintf(mensagem,"%c",dados);
+    sprintf(aux,"Enviado Orange: %c",dados);
+    printf("%s\n", aux);
     return;
 }
 
 /* Função para ler dados da UART + timeout 20ms */
 int readUart(int fd){
-    delay(20);
+    delay(40); // Tempo para espera (timeout)
     char msg = ' ';
-    if(serialDataAvail (fd) > 0)
+    char aux[20];
+    if(serialDataAvail (fd) > 0) // Verifica se tem algo disponível para leitura
     {
-        msg = serialGetchar (fd);
-        //printf("readUart: %c \n", msg);
-        fflush (stdout); 
-        //printf("%d\n",resp); 
+        msg = serialGetchar (fd); // Recebe os dados
+
+        sprintf(aux,"Recebido da Node: %c",dados);
+        printf("%s\n", aux);
+
+        fflush (stdout); // LImpa o buffer
         return (int) msg;
     }      
     return -1;
