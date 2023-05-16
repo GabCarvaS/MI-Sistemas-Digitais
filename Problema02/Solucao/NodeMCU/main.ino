@@ -10,7 +10,7 @@
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
-const char* host = "ESP-10.0.0.107";
+const char* host = "ESP-10.0.0.108";
 
 int led_pin = LED_BUILTIN;
 #define N_DIMMERS 3
@@ -48,7 +48,6 @@ void setup() {
   
   /* switch on led */
   pinMode(led_pin, OUTPUT);
-  pinMode(D0, INPUT);
   
   Serial.begin(9600); // BaudRate
   
@@ -97,6 +96,11 @@ void setup() {
   ArduinoOTA.begin();
   //Serial.println("Tudo pronto.");
   digitalWrite(led_pin, HIGH);
+
+  /* Configura os botões como input */
+  pinMode(D0, INPUT);
+  pinMode(D1, INPUT);
+
 }
 
 /* Variáveis auxiliares*/
@@ -125,8 +129,9 @@ void loop() {
           // Falta implementar
           Serial.write(okNode);
           break;
-        case todasEntradas;
+        case todasEntradas:
           // Falta implementar
+          Serial.write(okNode);
           break;
         case entradaDigital0:
           valorLido =  digitalRead(D0);
@@ -168,22 +173,6 @@ void loop() {
           valorLido =  digitalRead(D9);
           Serial.write(valorLido);
           break;
-        case entradaDigital10:
-          valorLido =  digitalRead(D10);
-          Serial.write(valorLido);
-          break;
-        case entradaDigital11:
-          valorLido =  digitalRead(D11);
-          Serial.write(valorLido);
-          break;
-        case entradaDigital12:
-          valorLido =  digitalRead(D12);
-          Serial.write(valorLido);
-          break;
-        case entradaDigital13:
-          valorLido =  digitalRead(D13);
-          Serial.write(valorLido);
-          break;        
       } 
   }
 }
