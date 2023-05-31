@@ -6,7 +6,7 @@ INCLUDE =    -I/usr/local/include
 CFLAGS =     $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS =   -L/usr/local/lib
-LDLIBS =    -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt -lmosquitto
+LDLIBS =    -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt -lpaho-mqtt3c
 
 SRC =       main.c
 OBJ =       $(SRC: .c=.o)
