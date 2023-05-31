@@ -9,14 +9,12 @@
 /*
 * Defines
 */
-/* Caso desejar utilizar um broker MQTT diferente do iot.eclipse.org, substitua o endereco abaixo pelo do broker desejado */
-#define MQTT_ADDRESS   "tcp://iot.eclipse.org"
-/* Substitua este por um ID unico em sua aplicacao */
-#define CLIENTID       "MQTTCClientID_MakerHero"  
- 
-/* Substitua aqui os topicos de publish e subscribe por topicos exclusivos de sua aplicacao */
-#define MQTT_PUBLISH_TOPIC     "MQTTCClientPubTopic"
-#define MQTT_SUBSCRIBE_TOPIC   "MQTTCClientSubTopic"
+#define MQTT_ADDRESS   "tcp://10.0.0.101:1883@@luno*123"
+#define CLIENTID       "ClientPub"  
+#define USERNAME	"aluno"
+#define PASSWORD	"@luno*123"
+#define MQTT_PUBLISH_TOPIC     "aoba/node"
+#define MQTT_SUBSCRIBE_TOPIC   "aoba/digital"
  
 /*
 *  Variaveis globais
@@ -34,7 +32,7 @@ int on_message(void *context, char *topicName, int topicLen, MQTTClient_message 
 */
  
 /* Funcao: publicacao de mensagens MQTT
- * Parametros: cleinte MQTT, topico MQTT and payload
+ * Parametros: cliente MQTT, topico MQTT and payload
  * Retorno: nenhum
 */
 void publish(MQTTClient client, char* topic, char* payload) {
@@ -71,6 +69,11 @@ int main(int argc, char *argv[])
 {
    int rc;
    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+   conn_opts.keepAliveInterval = 20;
+   conn_opts.cleansession = 1;
+   conn_opts.username = USERNAME;
+   conn_opts.password = PASSWORD;
+   
  
    /* Inicializacao do MQTT e configução de funcao de callback MQTT */
    MQTTClient_create(&client, MQTT_ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
@@ -78,7 +81,7 @@ int main(int argc, char *argv[])
  
    /* Conecta-se ao broker (e sai do programa caso a conexao venha a falhar) */
    rc = MQTTClient_connect(client, &conn_opts);
-  
+    
    if (rc != MQTTCLIENT_SUCCESS)
    {
        printf("\n\rFalha na conexao ao broker MQTT. Erro: %d\n", rc);
@@ -87,7 +90,7 @@ int main(int argc, char *argv[])
  
    /* Faz subscribe no topico definido em MQTT_SUBSCRIBE_TOPIC */
    MQTTClient_subscribe(client, MQTT_SUBSCRIBE_TOPIC, 0);
- 
+   printf("teste");
    /* Programa principal */
    while(1)
    {
