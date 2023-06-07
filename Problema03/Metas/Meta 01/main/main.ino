@@ -127,12 +127,14 @@ void callback(String topic, byte* message, unsigned int length) {
       else if(digitalRead(led_pin) == LOW){
         digitalWrite(led_pin, HIGH);
       }
-      value = "0b00000010"; //ok
+    }
+    value = "0b00000010"; //ok
       // Publishes the read value
       delay(1500);
       client.publish("respostas", String(value).c_str());
-    }
 
+      delay(1500);
+      client.publish("respostas", String(value).c_str());
     /*
     Testar 
     readSensors(messageTemp);

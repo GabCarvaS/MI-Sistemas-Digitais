@@ -28,6 +28,9 @@ const char* MQTT_password = "@luno*123";
 // MQTT broker
 const char* mqtt_server = "10.0.0.101";
 
+const char* subscribeTopic = "comandos";
+const char* publishTopic = "respostas";
+
 // Client MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -114,31 +117,13 @@ void setup() {
 // your ESP8266 is subscribed you can actually do something
 void callback(String topic, byte* message, unsigned int length) {
   if(topic == "comandos"){
-    String messageTemp, value;
+    String messageTemp;
   
     for (int i = 0; i < length; i++) {
       messageTemp += (char)message[i];
     }
 
-    if(messageTemp == "0b00100001"){ // Alternar estado do led
-      if(digitalRead(led_pin) == HIGH){
-        digitalWrite(led_pin, LOW);
-      }
-      else if(digitalRead(led_pin) == LOW){
-        digitalWrite(led_pin, HIGH);
-      }
-    }
-    value = "0b00000010"; //ok
-      // Publishes the read value
-      delay(1500);
-      client.publish("respostas", String(value).c_str());
-
-      delay(1500);
-      client.publish("respostas", String(value).c_str());
-    /*
-    Testar 
-    readSensors(messageTemp);
-    */
+    readSensors(messageTemp);   
   }
 }
 
@@ -158,16 +143,54 @@ void reconnect() {
     }
   }
 }
-/*
-void readSensors(){             
-  if(pc == toRequest[3] ){ 
-    digitalWrite(led_pin, LOW);
-  }
-  if(pc == toRequest[4] ){  
-    digitalWrite(led_pin, HIGH);
-  }      
+
+void readSensors(){  
+      if(pc == protocolCodes[1] ){ /*SE RECEBER O CÓDIGO RELACIONADO A ESTA UNIDADE ELA RETORNA CÓDIGO DE STATUS OK*/
+          client.publish("respostas", String(protocolCodes[33]).c_str());
+      }      
+      if(pc == toRequest[0] ){ /*SE RECEBER O CÓDIGO REFERENTE AO SENSOR ANALÓGICO*/
+        sensorValue = analogRead(analogInPin);
+        //Serial.print(sensorValue, BIN); /* ENVIA O VALOR DO POTENCIOMENTRO */
+        client.publish("respostas", String(sensorValue).c_str());
+      }
+      if(pc == toRequest[1] ){  /*SER RECEBER O CÓDIGO REFERENTE AO SENSOR DIGITAL 1*/
+        temp0 = digitalRead(buttonD0);
+        if (temp0 == HIGH) {
+          //Serial.print(1, BIN);
+          client.publish("respostas", String("1").c_str());
+        }
+        else {
+          //Serial.print(0, BIN);
+          client.publish("respostas", String("0").c_str());
+        }
+      }
+      if(pc == toRequest[2] ){  /*SER RECEBER O CÓDIGO REFERENTE AO SENSOR DIGITAL 2*/
+        temp1 = digitalRead(buttonD1);       
+        if (temp1 == HIGH) {
+          //Serial.print(1, BIN);
+          client.publish("respostas", String("1").c_str());
+        }
+        else {
+          //Serial.print(0, BIN);
+          client.publish("respostas", String("0").c_str());
+        }
+      }            
+      if(pc == toRequest[3] ){ /* SE RECEBER CÓDIGO PARA ATIVAR LED*/
+        digitalWrite(led_pin, LOW);
+        //Serial.print(1, BIN);
+        client.publish("respostas", String("1").c_str());
+      }
+      if(pc == toRequest[4] ){  /* SE RECEBER CÓDIGO PARA DESATIVAR LED*/
+        digitalWrite(led_pin, HIGH);
+        //Serial.print(0, BIN);
+        client.publish("respostas", String("0").c_str());
+      }      
+      if(pc == protocolCodes[63] ){ /*BROADCAST*/
+        //Serial.println(1, BIN);
+        client.publish("respostas", String("1").c_str());
+      }                  
 }
-*/
+
 void loop() {
   ArduinoOTA.handle();
 
